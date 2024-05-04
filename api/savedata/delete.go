@@ -23,8 +23,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/pagefaultgames/rogueserver/db"
-	"github.com/pagefaultgames/rogueserver/defs"
+	"github.com/Greenlamp2/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/defs"
 )
 
 // /savedata/delete - delete save data

@@ -23,11 +23,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/pagefaultgames/rogueserver/api/account"
-	"github.com/pagefaultgames/rogueserver/api/daily"
-	"github.com/pagefaultgames/rogueserver/api/savedata"
-	"github.com/pagefaultgames/rogueserver/db"
-	"github.com/pagefaultgames/rogueserver/defs"
+	"github.com/Greenlamp2/rogueserver/api/account"
+	"github.com/Greenlamp2/rogueserver/api/daily"
+	"github.com/Greenlamp2/rogueserver/api/savedata"
+	"github.com/Greenlamp2/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/defs"
 )
 
 /*

@@ -1,4 +1,4 @@
-module github.com/pagefaultgames/rogueserver
+module github.com/Greenlamp2/rogueserver
 
 go 1.22
 

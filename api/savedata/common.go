@@ -25,7 +25,7 @@ import (
 	"strconv"
 
 	"github.com/klauspost/compress/zstd"
-	"github.com/pagefaultgames/rogueserver/defs"
+	"github.com/Greenlamp2/rogueserver/defs"
 )
 
 func readSystemSaveData(uuid []byte) (defs.SystemSaveData, error) {

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/db"
 )
 
 // /account/register - register account

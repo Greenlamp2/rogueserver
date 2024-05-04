@@ -21,7 +21,7 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/db"
 )
 
 func ChangePW(uuid []byte, password string) error {
