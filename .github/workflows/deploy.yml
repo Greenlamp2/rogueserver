@@ -16,5 +16,6 @@ jobs:
         go-version: '1.22'
     - name: Build
       run: go build
-    - name: Run server
-      run: ./rogueserver
+    - name: Restart server
+      run: sudo systemctl restart rogueserver.service
+      shell: bash
