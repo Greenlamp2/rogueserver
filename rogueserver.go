@@ -64,6 +64,7 @@ func main() {
 
 	// init api
 	api.Init(mux)
+	log.Printf("it works")
 
 	// start web server
 	if *debug {
