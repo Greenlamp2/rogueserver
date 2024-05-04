@@ -2,4 +2,5 @@
 # no extension on linux, .exe on windows
 rogueserver*
 userdata/*
+.idea/*
 secret.key
