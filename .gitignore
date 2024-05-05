@@ -4,3 +4,4 @@ rogueserver*
 userdata/*
 .idea/*
 secret.key
+config.yml
