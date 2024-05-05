@@ -24,6 +24,8 @@ jobs:
         go get gopkg.in/yaml.v2
     - name: Build
       run: go build
+    - name CP config
+    - run cp /home/greenlamp/download/important/server-actions-runner/actions-runner/_work/config.yml /home/greenlamp/download/important/server-actions-runner/actions-runner/_work/rogueserver/rogueserver/
     - name: Restart server
       run: sudo systemctl restart rogueserver.service
       shell: bash
