@@ -24,23 +24,62 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"fmt"
+	"gopkg.in/yaml.v2"
 
-	"github.com/pagefaultgames/rogueserver/api"
-	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/api"
+	"github.com/Greenlamp2/rogueserver/db"
 )
+
+type Config struct {
+    Server struct {
+        Host string `yaml:"host"`
+    } `yaml:"server"`
+    Database struct {
+        Username string `yaml:"user"`
+        Password string `yaml:"pass"`
+        Database string `yaml:"database"`
+        Host string `yaml:"host"`
+    } `yaml:"database"`
+}
+
+func processError(err error) {
+    if err != nil {
+        fmt.Println("Error:", err)
+        os.Exit(1) // Exiting the program with an error code
+    }
+}
+
+func readConfigFile() Config {
+    f, err := os.Open("config.yml")
+    if err != nil {
+        processError(err)
+    }
+    defer f.Close()
+
+    var cfg Config
+    decoder := yaml.NewDecoder(f)
+    err = decoder.Decode(&cfg)
+    if err != nil {
+        processError(err)
+    }
+    return cfg
+}
 
 func main() {
 	// flag stuff
 	debug := flag.Bool("debug", false, "use debug mode")
 
-	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
-	addr := flag.String("addr", "0.0.0.0", "network address for api to listen on")
+	var cfg = readConfigFile()
 
-	dbuser := flag.String("dbuser", "pokerogue", "database username")
-	dbpass := flag.String("dbpass", "", "database password")
+	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
+	addr := flag.String("addr", cfg.Server.Host, "network address for api to listen on")
+
+	dbuser := flag.String("dbuser", cfg.Database.Username, "database username")
+	dbpass := flag.String("dbpass", cfg.Database.Password, "database password")
 	dbproto := flag.String("dbproto", "tcp", "protocol for database connection")
-	dbaddr := flag.String("dbaddr", "localhost", "database address")
-	dbname := flag.String("dbname", "pokeroguedb", "database name")
+	dbaddr := flag.String("dbaddr", cfg.Database.Host, "database address")
+	dbname := flag.String("dbname", cfg.Database.Database, "database name")
 
 	flag.Parse()
 

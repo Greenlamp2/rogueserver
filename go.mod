@@ -1,4 +1,4 @@
-module github.com/pagefaultgames/rogueserver
+module github.com/Greenlamp2/rogueserver
 
 go 1.22
 
@@ -9,4 +9,7 @@ require (
 	golang.org/x/crypto v0.16.0
 )
 
-require golang.org/x/sys v0.15.0 // indirect
+require (
+	golang.org/x/sys v0.15.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
+)

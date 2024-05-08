@@ -3,6 +3,7 @@
 rogueserver*
 userdata/*
 secret.key
+config.yml
 
 # Jetbrains IDEs
 /.idea/

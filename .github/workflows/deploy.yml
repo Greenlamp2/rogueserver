@@ -1,0 +1,32 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    - name: Activate GO111MODULE
+      run: go env -w GO111MODULE=on
+      shell: bash
+    - name: Install dependencies
+      run: |
+        go get .
+        go get github.com/Greenlamp2/rogueserver/api
+        go get gopkg.in/yaml.v2
+    - name: Build
+      run: go build
+    - name: CP config
+      run: cp /home/greenlamp/download/important/server-actions-runner/actions-runner/_work/config.yml /home/greenlamp/download/important/server-actions-runner/actions-runner/_work/rogueserver/rogueserver/
+      shell: bash
+    - name: Restart server
+      run: sudo systemctl restart rogueserver.service
+      shell: bash

@@ -18,7 +18,7 @@
 package savedata
 
 import (
-	"github.com/pagefaultgames/rogueserver/defs"
+	"github.com/Greenlamp2/rogueserver/defs"
 )
 
 func validateSessionCompleted(session defs.SessionSaveData) bool {

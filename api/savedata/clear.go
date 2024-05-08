@@ -18,10 +18,14 @@
 package savedata
 
 import (
+	"encoding/hex"
 	"fmt"
-	"github.com/pagefaultgames/rogueserver/db"
-	"github.com/pagefaultgames/rogueserver/defs"
 	"log"
+	"os"
+	"strconv"
+
+	"github.com/Greenlamp2/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/defs"
 )
 
 type ClearResponse struct {

@@ -20,7 +20,7 @@ package account
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/db"
 )
 
 // /account/register - register account

@@ -24,7 +24,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/db"
 )
 
 type LoginResponse GenericAuthResponse
