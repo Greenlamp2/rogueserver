@@ -19,8 +19,8 @@ package savedata
 
 import (
 	"fmt"
-	"github.com/pagefaultgames/Greenlamp2/db"
-	"github.com/pagefaultgames/Greenlamp2/defs"
+	"github.com/Greenlamp2/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/defs"
 	"log"
 )
 

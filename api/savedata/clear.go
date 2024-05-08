@@ -18,11 +18,8 @@
 package savedata
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 
 	"github.com/Greenlamp2/rogueserver/db"
 	"github.com/Greenlamp2/rogueserver/defs"

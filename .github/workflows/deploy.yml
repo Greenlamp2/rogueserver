@@ -21,6 +21,8 @@ jobs:
       run: |
         go get .
         go get github.com/Greenlamp2/rogueserver/api
+        go get github.com/Greenlamp2/rogueserver/defs
+        go get github.com/Greenlamp2/rogueserver/db
         go get gopkg.in/yaml.v2
     - name: Build
       run: go build
