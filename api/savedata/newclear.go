@@ -15,26 +15,30 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package account
+package savedata
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/Greenlamp2/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/defs"
 )
 
-// /account/logout - log out of account
-func Logout(token []byte) error {
-	err := db.RemoveSessionFromToken(token)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("token not found")
-		}
-
-		return fmt.Errorf("failed to remove account session")
+// /savedata/newclear - return whether a session is a new clear for its seed
+func NewClear(uuid []byte, slot int) (bool, error) {
+	if slot < 0 || slot >= defs.SessionSlotCount {
+		return false, fmt.Errorf("slot id %d out of range", slot)
 	}
 
-	return nil
+	session, err := db.ReadSessionSaveData(uuid, slot)
+	if err != nil {
+		return false, err
+	}
+
+	completed, err := db.ReadSeedCompleted(uuid, session.Seed)
+	if err != nil {
+		return false, fmt.Errorf("failed to read seed completed: %s", err)
+	}
+
+	return !completed, nil
 }

@@ -23,13 +23,31 @@ import (
 	"github.com/Greenlamp2/rogueserver/defs"
 )
 
-func TryAddDailyRun(seed string) error {
-	_, err := handle.Exec("INSERT INTO dailyRuns (seed, date) VALUES (?, UTC_DATE()) ON DUPLICATE KEY UPDATE date = date", seed)
+func TryAddDailyRun(seed string) (string, error) {
+	var actualSeed string
+    _, err := handle.Exec("INSERT INTO dailyRuns (seed, date) VALUES (?, UTC_DATE()) ON DUPLICATE KEY UPDATE seed = VALUES(seed)", seed)
+    if err != nil {
+        return "", err
+    }
+
+    // Retrieve the seed value after the insert/update operation
+    err = handle.QueryRow("SELECT seed FROM dailyRuns WHERE date = UTC_DATE()").Scan(&actualSeed)
+    if err != nil {
+        return "", err
+    }
+
+	return actualSeed, nil
+}
+
+func GetDailyRunSeed() (string, error) {
+	var seed string
+	err := handle.QueryRow("SELECT seed FROM dailyRuns WHERE date = UTC_DATE()").Scan(&seed)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return seed, nil
+
 }
 
 func AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {
