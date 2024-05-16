@@ -73,7 +73,7 @@ func main() {
 	var cfg = readConfigFile()
 
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
-	addr := flag.String("addr", "cfg.Server.Host", "network address for api to listen on")
+	addr := flag.String("addr", cfg.Server.Host, "network address for api to listen on")
 	tlscert := flag.String("tlscert", "", "tls certificate path")
 	tlskey := flag.String("tlskey", "", "tls key path")
 

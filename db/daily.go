@@ -25,10 +25,16 @@ import (
 
 func TryAddDailyRun(seed string) (string, error) {
 	var actualSeed string
-	err := handle.QueryRow("INSERT INTO dailyRuns (seed, date) VALUES (?, UTC_DATE()) ON DUPLICATE KEY UPDATE date = date RETURNING seed", seed).Scan(&actualSeed)
-	if err != nil {
-		return "", err
-	}
+    _, err := handle.Exec("INSERT INTO dailyRuns (seed, date) VALUES (?, UTC_DATE()) ON DUPLICATE KEY UPDATE seed = VALUES(seed)", seed)
+    if err != nil {
+        return "", err
+    }
+
+    // Retrieve the seed value after the insert/update operation
+    err = handle.QueryRow("SELECT seed FROM dailyRuns WHERE date = UTC_DATE()").Scan(&actualSeed)
+    if err != nil {
+        return "", err
+    }
 
 	return actualSeed, nil
 }

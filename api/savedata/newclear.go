@@ -20,8 +20,8 @@ package savedata
 import (
 	"fmt"
 
-	"github.com/pagefaultgames/rogueserver/db"
-	"github.com/pagefaultgames/rogueserver/defs"
+	"github.com/Greenlamp2/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/defs"
 )
 
 // /savedata/newclear - return whether a session is a new clear for its seed

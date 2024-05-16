@@ -144,39 +144,134 @@ func Init(username, password, protocol, address, database string) error {
 }
 
 func setupDb(tx *sql.Tx) error {
-	queries := []string{
-		// MIGRATION 000
+    queries := []string{
+        // MIGRATION 000
 
-		`CREATE TABLE IF NOT EXISTS accounts (uuid BINARY(16) NOT NULL PRIMARY KEY, username VARCHAR(16) UNIQUE NOT NULL, hash BINARY(32) NOT NULL, salt BINARY(16) NOT NULL, registered TIMESTAMP NOT NULL, lastLoggedIn TIMESTAMP DEFAULT NULL, lastActivity TIMESTAMP DEFAULT NULL, banned TINYINT(1) NOT NULL DEFAULT 0, trainerId SMALLINT(5) UNSIGNED DEFAULT 0, secretId SMALLINT(5) UNSIGNED DEFAULT 0)`,
-		`CREATE INDEX IF NOT EXISTS accountsByActivity ON accounts (lastActivity)`,
+        `CREATE TABLE IF NOT EXISTS accounts (
+            uuid BINARY(16) NOT NULL PRIMARY KEY,
+            username VARCHAR(16) UNIQUE NOT NULL,
+            hash BINARY(32) NOT NULL,
+            salt BINARY(16) NOT NULL,
+            registered TIMESTAMP NOT NULL,
+            lastLoggedIn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            lastActivity TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            banned TINYINT(1) NOT NULL DEFAULT 0,
+            trainerId SMALLINT(5) UNSIGNED DEFAULT 0,
+            secretId SMALLINT(5) UNSIGNED DEFAULT 0
+        )`,
+        `DROP INDEX accountsByActivity ON accounts;`,
+        `CREATE INDEX accountsByActivity ON accounts (lastActivity);`,
 
-		`CREATE TABLE IF NOT EXISTS sessions (token BINARY(32) NOT NULL PRIMARY KEY, uuid BINARY(16) NOT NULL, active TINYINT(1) NOT NULL DEFAULT 0, expire TIMESTAMP DEFAULT NULL, CONSTRAINT sessions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
-		`CREATE INDEX IF NOT EXISTS sessionsByUuid ON sessions (uuid)`,
+        `CREATE TABLE IF NOT EXISTS sessions (
+            token BINARY(32) NOT NULL PRIMARY KEY,
+            uuid BINARY(16) NOT NULL,
+            active TINYINT(1) NOT NULL DEFAULT 0,
+            expire TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT sessions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+        )`,
 
-		`CREATE TABLE IF NOT EXISTS accountStats (uuid BINARY(16) NOT NULL PRIMARY KEY, playTime INT(11) NOT NULL DEFAULT 0, battles INT(11) NOT NULL DEFAULT 0, classicSessionsPlayed INT(11) NOT NULL DEFAULT 0, sessionsWon INT(11) NOT NULL DEFAULT 0, highestEndlessWave INT(11) NOT NULL DEFAULT 0, highestLevel INT(11) NOT NULL DEFAULT 0, pokemonSeen INT(11) NOT NULL DEFAULT 0, pokemonDefeated INT(11) NOT NULL DEFAULT 0, pokemonCaught INT(11) NOT NULL DEFAULT 0, pokemonHatched INT(11) NOT NULL DEFAULT 0, eggsPulled INT(11) NOT NULL DEFAULT 0, regularVouchers INT(11) NOT NULL DEFAULT 0, plusVouchers INT(11) NOT NULL DEFAULT 0, premiumVouchers INT(11) NOT NULL DEFAULT 0, goldenVouchers INT(11) NOT NULL DEFAULT 0, CONSTRAINT accountStats_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
+        `ALTER TABLE sessions DROP FOREIGN KEY sessions_ibfk_1;`,
+        `DROP INDEX sessionsByUuid ON sessions;`,
+        `CREATE INDEX sessionsByUuid ON sessions (uuid);`,
+        `ALTER TABLE sessions ADD CONSTRAINT sessions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE;`,
 
-		`CREATE TABLE IF NOT EXISTS accountCompensations (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, uuid BINARY(16) NOT NULL, voucherType INT(11) NOT NULL, count INT(11) NOT NULL DEFAULT 1, claimed BIT(1) NOT NULL DEFAULT b'0', CONSTRAINT accountCompensations_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
-		`CREATE INDEX IF NOT EXISTS accountCompensationsByUuid ON accountCompensations (uuid)`,
+        `CREATE TABLE IF NOT EXISTS accountStats (
+            uuid BINARY(16) NOT NULL PRIMARY KEY,
+            playTime INT(11) NOT NULL DEFAULT 0,
+            battles INT(11) NOT NULL DEFAULT 0,
+            classicSessionsPlayed INT(11) NOT NULL DEFAULT 0,
+            sessionsWon INT(11) NOT NULL DEFAULT 0,
+            highestEndlessWave INT(11) NOT NULL DEFAULT 0,
+            highestLevel INT(11) NOT NULL DEFAULT 0,
+            pokemonSeen INT(11) NOT NULL DEFAULT 0,
+            pokemonDefeated INT(11) NOT NULL DEFAULT 0,
+            pokemonCaught INT(11) NOT NULL DEFAULT 0,
+            pokemonHatched INT(11) NOT NULL DEFAULT 0,
+            eggsPulled INT(11) NOT NULL DEFAULT 0,
+            regularVouchers INT(11) NOT NULL DEFAULT 0,
+            plusVouchers INT(11) NOT NULL DEFAULT 0,
+            premiumVouchers INT(11) NOT NULL DEFAULT 0,
+            goldenVouchers INT(11) NOT NULL DEFAULT 0,
+            CONSTRAINT accountStats_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+        )`,
 
-		`CREATE TABLE IF NOT EXISTS dailyRuns (date DATE NOT NULL PRIMARY KEY, seed CHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL)`,
-		`CREATE INDEX IF NOT EXISTS dailyRunsByDateAndSeed ON dailyRuns (date, seed)`,
+        `CREATE TABLE IF NOT EXISTS accountCompensations (
+            id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            uuid BINARY(16) NOT NULL,
+            voucherType INT(11) NOT NULL,
+            count INT(11) NOT NULL DEFAULT 1,
+            claimed BIT(1) NOT NULL DEFAULT b'0',
+            CONSTRAINT accountCompensations_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+        )`,
 
-		`CREATE TABLE IF NOT EXISTS dailyRunCompletions (uuid BINARY(16) NOT NULL, seed CHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL, mode INT(11) NOT NULL DEFAULT 0, score INT(11) NOT NULL DEFAULT 0, timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (uuid, seed), CONSTRAINT dailyRunCompletions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
-		`CREATE INDEX IF NOT EXISTS dailyRunCompletionsByUuidAndSeed ON dailyRunCompletions (uuid, seed)`,
+        `ALTER TABLE accountCompensations DROP FOREIGN KEY accountCompensations_ibfk_1;`,
+        `DROP INDEX accountCompensationsByUuid ON accountCompensations;`,
+        `CREATE INDEX accountCompensationsByUuid ON accountCompensations (uuid);`,
+        `ALTER TABLE accountCompensations ADD CONSTRAINT accountCompensations_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE;`,
 
-		`CREATE TABLE IF NOT EXISTS accountDailyRuns (uuid BINARY(16) NOT NULL, date DATE NOT NULL, score INT(11) NOT NULL DEFAULT 0, wave INT(11) NOT NULL DEFAULT 0, timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (uuid, date), CONSTRAINT accountDailyRuns_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT accountDailyRuns_ibfk_2 FOREIGN KEY (date) REFERENCES dailyRuns (date) ON DELETE NO ACTION ON UPDATE NO ACTION)`,
-		`CREATE INDEX IF NOT EXISTS accountDailyRunsByDate ON accountDailyRuns (date)`,
+        `CREATE TABLE IF NOT EXISTS dailyRuns (
+            date DATE NOT NULL PRIMARY KEY,
+            seed CHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL
+        )`,
+        `DROP INDEX dailyRunsByDateAndSeed ON dailyRuns;`,
+        `CREATE INDEX dailyRunsByDateAndSeed ON dailyRuns (date, seed);`,
 
-		`CREATE TABLE IF NOT EXISTS systemSaveData (uuid BINARY(16) PRIMARY KEY, data LONGBLOB, timestamp TIMESTAMP, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
+        `CREATE TABLE IF NOT EXISTS dailyRunCompletions (
+            uuid BINARY(16) NOT NULL,
+            seed CHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            mode INT(11) NOT NULL DEFAULT 0,
+            score INT(11) NOT NULL DEFAULT 0,
+            timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (uuid, seed),
+            CONSTRAINT dailyRunCompletions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+        )`,
 
-		`CREATE TABLE IF NOT EXISTS sessionSaveData (uuid BINARY(16), slot TINYINT, data LONGBLOB, timestamp TIMESTAMP, PRIMARY KEY (uuid, slot), FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
+        `ALTER TABLE dailyRunCompletions DROP FOREIGN KEY dailyRunCompletions_ibfk_1;`,
+        `DROP INDEX dailyRunCompletionsByUuidAndSeed ON dailyRunCompletions;`,
+        `CREATE INDEX dailyRunCompletionsByUuidAndSeed ON dailyRunCompletions(uuid, seed);`,
+        `ALTER TABLE dailyRunCompletions ADD CONSTRAINT dailyRunCompletions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE;`,
 
-		// ----------------------------------
-		// MIGRATION 001
+        `CREATE TABLE IF NOT EXISTS accountDailyRuns (
+            uuid BINARY(16) NOT NULL,
+            date DATE NOT NULL,
+            score INT(11) NOT NULL DEFAULT 0,
+            wave INT(11) NOT NULL DEFAULT 0,
+            timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (uuid, date),
+            CONSTRAINT accountDailyRuns_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
+            CONSTRAINT accountDailyRuns_ibfk_2 FOREIGN KEY (date) REFERENCES dailyRuns (date) ON DELETE NO ACTION ON UPDATE NO ACTION
+        )`,
 
-		`ALTER TABLE sessions DROP COLUMN IF EXISTS active`,
-		`CREATE TABLE IF NOT EXISTS activeClientSessions (uuid BINARY(16) NOT NULL PRIMARY KEY, clientSessionId VARCHAR(32) NOT NULL, FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE)`,
-	}
+        `ALTER TABLE accountDailyRuns DROP FOREIGN KEY accountDailyRuns_ibfk_2;`,
+        `DROP INDEX accountDailyRunsByDate ON accountDailyRuns;`,
+        `CREATE INDEX accountDailyRunsByDate ON accountDailyRuns (date);`,
+        `ALTER TABLE accountDailyRuns ADD CONSTRAINT accountDailyRuns_ibfk_2 FOREIGN KEY (date) REFERENCES dailyRuns (date) ON DELETE NO ACTION ON UPDATE NO ACTION;`,
+
+        `CREATE TABLE IF NOT EXISTS systemSaveData (
+            uuid BINARY(16) PRIMARY KEY,
+            data LONGBLOB,
+            timestamp TIMESTAMP,
+            FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS sessionSaveData (
+            uuid BINARY(16),
+            slot TINYINT,
+            data LONGBLOB,
+            timestamp TIMESTAMP,
+            PRIMARY KEY (uuid, slot),
+            FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+        )`,
+
+        // ----------------------------------
+        // MIGRATION 001
+
+        `CREATE TABLE IF NOT EXISTS activeClientSessions (
+            uuid BINARY(16) NOT NULL PRIMARY KEY,
+            clientSessionId VARCHAR(32) NOT NULL,
+            FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
+        )`,
+    }
 
 	for _, q := range queries {
 		_, err := tx.Exec(q)
