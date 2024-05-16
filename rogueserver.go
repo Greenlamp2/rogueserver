@@ -73,7 +73,9 @@ func main() {
 	var cfg = readConfigFile()
 
 	proto := flag.String("proto", "tcp", "protocol for api to use (tcp, unix)")
-	addr := flag.String("addr", cfg.Server.Host, "network address for api to listen on")
+	addr := flag.String("addr", "cfg.Server.Host", "network address for api to listen on")
+	tlscert := flag.String("tlscert", "", "tls certificate path")
+	tlskey := flag.String("tlskey", "", "tls key path")
 
 	dbuser := flag.String("dbuser", cfg.Database.Username, "database username")
 	dbpass := flag.String("dbpass", cfg.Database.Password, "database password")
@@ -102,13 +104,20 @@ func main() {
 	mux := http.NewServeMux()
 
 	// init api
-	api.Init(mux)
+	if err := api.Init(mux); err != nil {
+		log.Fatal(err)
+	}
 
 	// start web server
+	handler := prodHandler(mux)
 	if *debug {
-		err = http.Serve(listener, debugHandler(mux))
+		handler = debugHandler(mux)
+	}
+
+	if *tlscert == "" {
+		err = http.Serve(listener, handler)
 	} else {
-		err = http.Serve(listener, mux)
+		err = http.ServeTLS(listener, handler, *tlscert, *tlskey)
 	}
 	if err != nil {
 		log.Fatalf("failed to create http server or server errored: %s", err)
@@ -126,10 +135,28 @@ func createListener(proto, addr string) (net.Listener, error) {
 	}
 
 	if proto == "unix" {
-		os.Chmod(addr, 0777)
+		if err := os.Chmod(addr, 0777); err != nil {
+			listener.Close()
+			return nil, err
+		}
 	}
 
 	return listener, nil
+}
+
+func prodHandler(router *http.ServeMux) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST")
+		w.Header().Set("Access-Control-Allow-Origin", "https://pokerogue.net")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		router.ServeHTTP(w, r)
+	})
 }
 
 func debugHandler(router *http.ServeMux) http.Handler {

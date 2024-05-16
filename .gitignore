@@ -1,7 +1,18 @@
 
 # no extension on linux, .exe on windows
 rogueserver*
-userdata/*
-.idea/*
+!/rogueserver/*
+/userdata/*
 secret.key
 config.yml
+
+# local testing
+/.data/
+
+# Jetbrains IDEs
+/.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/launch.json
+.idea/*

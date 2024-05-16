@@ -18,11 +18,8 @@
 package savedata
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 
 	"github.com/Greenlamp2/rogueserver/db"
 	"github.com/Greenlamp2/rogueserver/defs"
@@ -60,20 +57,15 @@ func Clear(uuid []byte, slot int, seed string, save defs.SessionSaveData) (Clear
 	}
 
 	if sessionCompleted {
-		response.Success, err = db.TryAddDailyRunCompletion(uuid, save.Seed, int(save.GameMode))
+		response.Success, err = db.TryAddSeedCompletion(uuid, save.Seed, int(save.GameMode))
 		if err != nil {
 			log.Printf("failed to mark seed as completed: %s", err)
 		}
 	}
 
-	fileName := "session"
-	if slot != 0 {
-		fileName += strconv.Itoa(slot)
-	}
-
-	err = os.Remove(fmt.Sprintf("userdata/%s/%s.pzs", hex.EncodeToString(uuid), fileName))
-	if err != nil && !os.IsNotExist(err) {
-		return response, fmt.Errorf("failed to delete save file: %s", err)
+	err = db.DeleteSessionSaveData(uuid, slot)
+	if err != nil {
+		log.Printf("failed to delete session save data: %s", err)
 	}
 
 	return response, nil

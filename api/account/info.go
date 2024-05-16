@@ -18,11 +18,7 @@
 package account
 
 import (
-	"fmt"
-	"os"
-	"strconv"
-	"time"
-
+	"github.com/Greenlamp2/rogueserver/db"
 	"github.com/Greenlamp2/rogueserver/defs"
 )
 
@@ -33,24 +29,24 @@ type InfoResponse struct {
 
 // /account/info - get account info
 func Info(username string, uuid []byte) (InfoResponse, error) {
-	var latestSave time.Time
-	latestSaveID := -1
-	for id := range defs.SessionSlotCount {
-		fileName := "session"
-		if id != 0 {
-			fileName += strconv.Itoa(id)
-		}
+	response := InfoResponse{Username: username, LastSessionSlot: -1}
 
-		stat, err := os.Stat(fmt.Sprintf("userdata/%x/%s.pzs", uuid, fileName))
+	highest := -1
+	for i := 0; i < defs.SessionSlotCount; i++ {
+		data, err := db.ReadSessionSaveData(uuid, i)
 		if err != nil {
 			continue
 		}
 
-		if stat.ModTime().After(latestSave) {
-			latestSave = stat.ModTime()
-			latestSaveID = id
+		if data.Timestamp > highest {
+			highest = data.Timestamp
+			response.LastSessionSlot = i
 		}
 	}
 
-	return InfoResponse{Username: username, LastSessionSlot: latestSaveID}, nil
+	if response.LastSessionSlot < 0 || response.LastSessionSlot >= defs.SessionSlotCount {
+		response.LastSessionSlot = -1
+	}
+
+	return response, nil
 }

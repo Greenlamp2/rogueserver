@@ -19,6 +19,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -37,11 +38,6 @@ func AddAccountRecord(uuid []byte, username string, key, salt []byte) error {
 
 func AddAccountSession(username string, token []byte) error {
 	_, err := handle.Exec("INSERT INTO sessions (uuid, token, expire) SELECT a.uuid, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 WEEK) FROM accounts a WHERE a.username = ?", token, username)
-	if err != nil {
-		return err
-	}
-
-	_, err = handle.Exec("UPDATE sessions s JOIN accounts a ON a.uuid = s.uuid SET s.active = 1 WHERE a.username = ? AND a.lastLoggedIn IS NULL", username)
 	if err != nil {
 		return err
 	}
@@ -186,16 +182,6 @@ func DeleteClaimedAccountCompensations(uuid []byte) error {
 	return nil
 }
 
-func FetchUsernameFromToken(token []byte) (string, error) {
-	var username string
-	err := handle.QueryRow("SELECT a.username FROM accounts a JOIN sessions s ON s.uuid = a.uuid WHERE s.token = ? AND s.expire > UTC_TIMESTAMP()", token).Scan(&username)
-	if err != nil {
-		return "", err
-	}
-
-	return username, nil
-}
-
 func FetchAccountKeySaltFromUsername(username string) ([]byte, []byte, error) {
 	var key, salt []byte
 	err := handle.QueryRow("SELECT hash, salt FROM accounts WHERE username = ?", username).Scan(&key, &salt)
@@ -224,18 +210,25 @@ func UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
 	return nil
 }
 
-func IsActiveSession(token []byte) (bool, error) {
-	var active int
-	err := handle.QueryRow("SELECT `active` FROM sessions WHERE token = ?", token).Scan(&active)
+func IsActiveSession(uuid []byte, clientSessionId string) (bool, error) {
+	var storedId string
+	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE uuid = ?", uuid).Scan(&storedId)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = UpdateActiveSession(uuid, clientSessionId)
+			if err != nil {
+				return false, err
+			}
+			return true, nil
+		}
 		return false, err
 	}
 
-	return active == 1, nil
+	return storedId == "" || storedId == clientSessionId, nil
 }
 
-func UpdateActiveSession(uuid []byte, token []byte) error {
-	_, err := handle.Exec("UPDATE sessions SET `active` = CASE WHEN token = ? THEN 1 ELSE 0 END WHERE uuid = ?", token, uuid)
+func UpdateActiveSession(uuid []byte, clientSessionId string) error {
+	_, err := handle.Exec("REPLACE INTO activeClientSessions VALUES (?, ?)", uuid, clientSessionId)
 	if err != nil {
 		return err
 	}
@@ -245,12 +238,8 @@ func UpdateActiveSession(uuid []byte, token []byte) error {
 
 func FetchUUIDFromToken(token []byte) ([]byte, error) {
 	var uuid []byte
-	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ? AND expire > UTC_TIMESTAMP()", token).Scan(&uuid)
+	err := handle.QueryRow("SELECT uuid FROM sessions WHERE token = ?", token).Scan(&uuid)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, err
-		}
-
 		return nil, err
 	}
 
@@ -264,4 +253,14 @@ func RemoveSessionFromToken(token []byte) error {
 	}
 
 	return nil
+}
+
+func FetchUsernameFromUUID(uuid []byte) (string, error) {
+	var username string
+	err := handle.QueryRow("SELECT username FROM accounts WHERE uuid = ?", uuid).Scan(&username)
+	if err != nil {
+		return "", err
+	}
+
+	return username, nil
 }

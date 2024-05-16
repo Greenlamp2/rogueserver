@@ -15,40 +15,30 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package account
+package savedata
 
 import (
-	"crypto/rand"
 	"fmt"
-	"github.com/Greenlamp2/rogueserver/db"
+
+	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
-// /account/register - register account
-func Register(username, password string) error {
-	if !isValidUsername(username) {
-		return fmt.Errorf("invalid username")
+// /savedata/newclear - return whether a session is a new clear for its seed
+func NewClear(uuid []byte, slot int) (bool, error) {
+	if slot < 0 || slot >= defs.SessionSlotCount {
+		return false, fmt.Errorf("slot id %d out of range", slot)
 	}
 
-	if len(password) < 6 {
-		return fmt.Errorf("invalid password")
-	}
-
-	uuid := make([]byte, UUIDSize)
-	_, err := rand.Read(uuid)
+	session, err := db.ReadSessionSaveData(uuid, slot)
 	if err != nil {
-		return fmt.Errorf("failed to generate uuid: %s", err)
+		return false, err
 	}
 
-	salt := make([]byte, ArgonSaltSize)
-	_, err = rand.Read(salt)
+	completed, err := db.ReadSeedCompleted(uuid, session.Seed)
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("failed to generate salt: %s", err))
+		return false, fmt.Errorf("failed to read seed completed: %s", err)
 	}
 
-	err = db.AddAccountRecord(uuid, username, deriveArgon2IDKey([]byte(password), salt), salt)
-	if err != nil {
-		return fmt.Errorf("failed to add account record: %s", err)
-	}
-
-	return nil
+	return !completed, nil
 }

@@ -29,18 +29,43 @@ import (
 func Get(uuid []byte, datatype, slot int) (any, error) {
 	switch datatype {
 	case 0: // System
-		system, err := readSystemSaveData(uuid)
+		if slot != 0 {
+			return nil, fmt.Errorf("invalid slot id for system data")
+		}
+
+		system, err := db.ReadSystemSaveData(uuid)
 		if err != nil {
 			return nil, err
 		}
 
+		// TODO this should be a transaction
 		compensations, err := db.FetchAndClaimAccountCompensations(uuid)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch compensations: %s", err)
 		}
 
+		needsUpdate := false
 		for compensationType, amount := range compensations {
 			system.VoucherCounts[strconv.Itoa(compensationType)] += amount
+			if amount > 0 {
+				needsUpdate = true
+			}
+		}
+
+		if needsUpdate {
+			err = db.StoreSystemSaveData(uuid, system)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update system save data: %s", err)
+			}
+			err = db.DeleteClaimedAccountCompensations(uuid)
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete claimed compensations: %s", err)
+			}
+
+			err = db.UpdateAccountStats(uuid, system.GameStats, system.VoucherCounts)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update account stats: %s", err)
+			}
 		}
 
 		return system, nil
@@ -49,7 +74,7 @@ func Get(uuid []byte, datatype, slot int) (any, error) {
 			return nil, fmt.Errorf("slot id %d out of range", slot)
 		}
 
-		session, err := readSessionSaveData(uuid, slot)
+		session, err := db.ReadSessionSaveData(uuid, slot)
 		if err != nil {
 			return nil, err
 		}
