@@ -18,17 +18,15 @@
 package daily
 
 import (
-	"log"
-
-	"github.com/Greenlamp2/rogueserver/db"
-	"github.com/Greenlamp2/rogueserver/defs"
+	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 // /daily/rankings - fetch daily rankings
 func Rankings(category, page int) ([]defs.DailyRanking, error) {
 	rankings, err := db.FetchRankings(category, page)
 	if err != nil {
-		log.Print("failed to retrieve rankings")
+		return rankings, err
 	}
 
 	return rankings, nil

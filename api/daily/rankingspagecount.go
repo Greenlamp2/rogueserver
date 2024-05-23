@@ -18,16 +18,14 @@
 package daily
 
 import (
-	"log"
-
-	"github.com/Greenlamp2/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 // /daily/rankingpagecount - fetch daily ranking page count
 func RankingPageCount(category int) (int, error) {
 	pageCount, err := db.FetchRankingPageCount(category)
 	if err != nil {
-		log.Print("failed to retrieve ranking page count")
+		return pageCount, err
 	}
 
 	return pageCount, nil
