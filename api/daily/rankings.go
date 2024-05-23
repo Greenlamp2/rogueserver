@@ -18,8 +18,8 @@
 package daily
 
 import (
-	"github.com/Greenlamp2/rogueserver/db"
-	"github.com/Greenlamp2/rogueserver/defs"
+	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 // /daily/rankings - fetch daily rankings

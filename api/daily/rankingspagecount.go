@@ -18,7 +18,7 @@
 package daily
 
 import (
-	"github.com/Greenlamp2/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 // /daily/rankingpagecount - fetch daily ranking page count
