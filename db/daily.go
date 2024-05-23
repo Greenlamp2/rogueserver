@@ -25,16 +25,16 @@ import (
 
 func TryAddDailyRun(seed string) (string, error) {
 	var actualSeed string
-	_, err := handle.Exec("INSERT INTO dailyRuns (seed, date) VALUES (?, UTC_DATE()) ON DUPLICATE KEY UPDATE seed = VALUES(seed)", seed)
-	if err != nil {
-		return "", err
-	}
+    _, err := handle.Exec("INSERT INTO dailyRuns (seed, date) VALUES (?, UTC_DATE()) ON DUPLICATE KEY UPDATE seed = VALUES(seed)", seed)
+    if err != nil {
+        return "", err
+    }
 
-	// Retrieve the seed value after the insert/update operation
-	err = handle.QueryRow("SELECT seed FROM dailyRuns WHERE date = UTC_DATE()").Scan(&actualSeed)
-	if err != nil {
-		return "", err
-	}
+    // Retrieve the seed value after the insert/update operation
+    err = handle.QueryRow("SELECT seed FROM dailyRuns WHERE date = UTC_DATE()").Scan(&actualSeed)
+    if err != nil {
+        return "", err
+    }
 
 	return actualSeed, nil
 }
@@ -67,9 +67,9 @@ func FetchRankings(category int, page int) ([]defs.DailyRanking, error) {
 	var query string
 	switch category {
 	case 0:
-		query = "SELECT RANK() OVER (ORDER BY adr.score DESC, adr.timestamp) AS rank, a.username, adr.score, adr.wave FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date = UTC_DATE() AND a.banned = 0 LIMIT 10 OFFSET ?\n"
+		query = "SELECT RANK() OVER (ORDER BY adr.score DESC, adr.timestamp), a.username, adr.score, adr.wave FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date = UTC_DATE() AND a.banned = 0 LIMIT 10 OFFSET ?"
 	case 1:
-		query = "SELECT RANK() OVER (ORDER BY SUM(adr.score) DESC, MIN(adr.timestamp)) AS rank, a.username, SUM(adr.score) AS total_score, 0 AS wave FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date >= DATE_SUB(DATE(UTC_TIMESTAMP()), INTERVAL DAYOFWEEK(UTC_TIMESTAMP()) - 1 DAY) AND a.banned = 0 GROUP BY a.username ORDER BY rank LIMIT 10 OFFSET ?\n"
+		query = "SELECT RANK() OVER (ORDER BY SUM(adr.score) DESC, adr.timestamp), a.username, SUM(adr.score), 0 FROM accountDailyRuns adr JOIN dailyRuns dr ON dr.date = adr.date JOIN accounts a ON adr.uuid = a.uuid WHERE dr.date >= DATE_SUB(DATE(UTC_TIMESTAMP()), INTERVAL DAYOFWEEK(UTC_TIMESTAMP()) - 1 DAY) AND a.banned = 0 GROUP BY a.username ORDER BY 1 LIMIT 10 OFFSET ?"
 	}
 
 	results, err := handle.Query(query, offset)
