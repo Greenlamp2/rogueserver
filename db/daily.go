@@ -47,7 +47,6 @@ func GetDailyRunSeed() (string, error) {
 	}
 
 	return seed, nil
-
 }
 
 func AddOrUpdateAccountDailyRun(uuid []byte, score int, wave int) error {

@@ -219,25 +219,27 @@ func UpdateTrainerIds(trainerId, secretId int, uuid []byte) error {
 	return nil
 }
 
-func IsActiveSession(uuid []byte, clientSessionId string) (bool, error) {
-	var storedId string
-	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE uuid = ?", uuid).Scan(&storedId)
+func IsActiveSession(uuid []byte, sessionId string) (bool, error) {
+	var id string
+	err := handle.QueryRow("SELECT clientSessionId FROM activeClientSessions WHERE uuid = ?", uuid).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = UpdateActiveSession(uuid, clientSessionId)
+			err = UpdateActiveSession(uuid, sessionId)
 			if err != nil {
 				return false, err
 			}
+
 			return true, nil
 		}
+
 		return false, err
 	}
 
-	return storedId == "" || storedId == clientSessionId, nil
+	return id == "" || id == sessionId, nil
 }
 
 func UpdateActiveSession(uuid []byte, clientSessionId string) error {
-	_, err := handle.Exec("REPLACE INTO activeClientSessions VALUES (?, ?)", uuid, clientSessionId)
+	_, err := handle.Exec("INSERT INTO activeClientSessions (uuid, clientSessionId) VALUES (?, ?) ON DUPLICATE KEY UPDATE clientSessionId = ?", uuid, clientSessionId, clientSessionId)
 	if err != nil {
 		return err
 	}
