@@ -18,7 +18,7 @@
 package account
 
 import (
-	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/db"
 )
 
 type InfoResponse struct {
