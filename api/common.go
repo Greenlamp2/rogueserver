@@ -24,9 +24,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/pagefaultgames/rogueserver/api/account"
-	"github.com/pagefaultgames/rogueserver/api/daily"
-	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/Greenlamp2/rogueserver/api/account"
+	"github.com/Greenlamp2/rogueserver/api/daily"
+	"github.com/Greenlamp2/rogueserver/db"
 )
 
 func Init(mux *http.ServeMux) error {
