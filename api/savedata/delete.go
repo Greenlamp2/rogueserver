@@ -19,9 +19,10 @@ package savedata
 
 import (
 	"fmt"
-	"github.com/Greenlamp2/rogueserver/db"
-	"github.com/Greenlamp2/rogueserver/defs"
 	"log"
+
+	"github.com/pagefaultgames/rogueserver/db"
+	"github.com/pagefaultgames/rogueserver/defs"
 )
 
 // /savedata/delete - delete save data
@@ -32,15 +33,19 @@ func Delete(uuid []byte, datatype, slot int) error {
 	}
 
 	switch datatype {
-	case 0: // System
-		return db.DeleteSystemSaveData(uuid)
 	case 1: // Session
 		if slot < 0 || slot >= defs.SessionSlotCount {
-			return fmt.Errorf("slot id %d out of range", slot)
+			err = fmt.Errorf("slot id %d out of range", slot)
+			break
 		}
 
-		return db.DeleteSessionSaveData(uuid, slot)
+		err = db.DeleteSessionSaveData(uuid, slot)
 	default:
-		return fmt.Errorf("invalid data type")
+		err = fmt.Errorf("invalid data type")
 	}
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -21,18 +21,22 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/Greenlamp2/rogueserver/api/account"
-	"github.com/Greenlamp2/rogueserver/api/daily"
-	"github.com/Greenlamp2/rogueserver/db"
 	"log"
 	"net/http"
+
+	"github.com/pagefaultgames/rogueserver/api/account"
+	"github.com/pagefaultgames/rogueserver/api/daily"
+	"github.com/pagefaultgames/rogueserver/db"
 )
 
 func Init(mux *http.ServeMux) error {
-	if err := scheduleStatRefresh(); err != nil {
+	err := scheduleStatRefresh()
+	if err != nil {
 		return err
 	}
-	if err := daily.Init(); err != nil {
+
+	err = daily.Init()
+	if err != nil {
 		return err
 	}
 
@@ -48,22 +52,17 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("GET /game/classicsessioncount", handleGameClassicSessionCount)
 
 	// savedata
-	mux.HandleFunc("GET /savedata/get", legacyHandleGetSaveData)
-	mux.HandleFunc("POST /savedata/update", legacyHandleSaveData)
-	mux.HandleFunc("GET /savedata/delete", legacyHandleSaveData) // TODO use deleteSystemSave
-	mux.HandleFunc("POST /savedata/clear", legacyHandleSaveData) // TODO use clearSessionData
-	mux.HandleFunc("GET /savedata/newclear", legacyHandleNewClear)
+	mux.HandleFunc("/savedata/session/{action}", handleSession)
+	mux.HandleFunc("/savedata/system/{action}", handleSystem)
 
 	// new session
 	mux.HandleFunc("POST /savedata/updateall", handleUpdateAll)
-	mux.HandleFunc("POST /savedata/system/verify", handleSystemVerify)
-	mux.HandleFunc("GET /savedata/system", handleGetSystemData)
-	mux.HandleFunc("GET /savedata/session", handleGetSessionData)
 
 	// daily
 	mux.HandleFunc("GET /daily/seed", handleDailySeed)
 	mux.HandleFunc("GET /daily/rankings", handleDailyRankings)
 	mux.HandleFunc("GET /daily/rankingpagecount", handleDailyRankingPageCount)
+
 	return nil
 }
 
@@ -86,7 +85,11 @@ func tokenFromRequest(r *http.Request) ([]byte, error) {
 
 func uuidFromRequest(r *http.Request) ([]byte, error) {
 	_, uuid, err := tokenAndUuidFromRequest(r)
-	return uuid, err
+	if err != nil {
+		return nil, err
+	}
+
+	return uuid, nil
 }
 
 func tokenAndUuidFromRequest(r *http.Request) ([]byte, []byte, error) {
@@ -108,7 +111,7 @@ func httpError(w http.ResponseWriter, r *http.Request, err error, code int) {
 	http.Error(w, err.Error(), code)
 }
 
-func jsonResponse(w http.ResponseWriter, r *http.Request, data any) {
+func writeJSON(w http.ResponseWriter, r *http.Request, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
